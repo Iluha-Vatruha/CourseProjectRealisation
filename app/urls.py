@@ -14,9 +14,26 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.urls import include
 from django.contrib import admin
 from django.urls import path
+from rest_framework.routers import DefaultRouter
+
+from Irktech.api import OrdersViewset, ListsViewset, VentsViewset, ClientsViewset
+
+from Irktech import views
+
+router = DefaultRouter()
+router.register("orders", OrdersViewset, basename="orders")
+router.register("lists", ListsViewset, basename="lists")
+router.register("vents", VentsViewset, basename="vents")
+router.register("clients", ClientsViewset, basename="clients")
+
+
 
 urlpatterns = [
+
+    path('', views.ShowOrdersView.as_view()),
     path('admin/', admin.site.urls),
+    path('api/', include (router.urls)),
 ]
