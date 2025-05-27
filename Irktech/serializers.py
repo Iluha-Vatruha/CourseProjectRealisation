@@ -7,7 +7,7 @@ from Irktech.models import Order, List, Vent, Client
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['id', 'orderNumber', 'date', 'user']
+        fields = ['id', 'orderNumber', 'user', 'comment', 'date']
 
 class ListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,9 +17,9 @@ class ListSerializer(serializers.ModelSerializer):
 class VentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vent
-        fields = ['ventName', 'picture']
+        fields = ['id', 'ventName', 'picture']
 
 class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
-        fields = ['id', 'name', 'email', 'phone']
+        fields = ['id', 'user', 'name', 'email', 'phone' ]

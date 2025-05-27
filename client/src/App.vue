@@ -42,9 +42,30 @@
   <div>
     <router-view/>
   </div>
+  <div class="footer row">
+    <div class="col">
+      Общество с ограниченной ответственностью «ИРКТЕХ»<br>
+      Адрес: 664035, г. Иркутск, ул. Петрова д.17<br>
+      Инв: 3808182080<br>
+      ОГРН: 1153850045800
+    </div>
+    <div class="col cunt">
+      Контакты:<br>
+      Телефон: 88005553535<br>
+      Почта: irktech00@mail.ru<br>
+    </div>
+  </div>
 </div>
 </template>
 
 <style scoped>
-
+.footer {
+  margin-top: 40px;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+  }
+.cunt{
+  display: flex; justify-content: right;
+  }
 </style>
