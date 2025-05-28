@@ -1,179 +1,113 @@
 <script setup>
-import { ref, onBeforeMount } from 'vue';
-import axios from "axios";
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import authService from '@/api/auth'
 
-const orders = ref([]);
-const lists = ref([]);
-const clients = ref([]);
-const vents = ref([]);
-const groupedOrders = ref([]);
-const loading = ref(false);
+const router = useRouter()
+const username = ref('')
+const password = ref('')
+const error = ref('')
+const loading = ref(false)
 
-async function fetchOrders() {
+const handleLogin = async () => {
   try {
-    loading.value = true;
-    const response = await axios.get("/api/orders/");
-    orders.value = response.data;
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-    return [];
-  }
-}
-
-async function fetchLists() {
-  try {
-    const response = await axios.get("/api/lists/");
-    lists.value = response.data;
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching lists:', error);
-    return [];
-  }
-}
-
-async function fetchClients() {
-  try {
-    const response = await axios.get("/api/clients/");
-    clients.value = response.data;
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching clients:', error);
-    return [];
-  }
-}
-
-async function fetchVents() {
-  try {
-    const response = await axios.get("/api/vents/");
-    vents.value = response.data;
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching vents:', error);
-    return [];
-  }
-}
-
-function enrichOrderData(orders, lists, clients, vents) {
-  return orders.map(order => {
-    // Находим клиента по user ID
-    const client = clients.find(c => c.user === order.user) || {};
+    loading.value = true
+    error.value = ''
     
-    // Находим элементы заказа
-    const orderItems = lists.filter(item => item.orderNumber === order.id)
-      .map(item => {
-        // Находим название вентиляционного элемента
-        const vent = vents.find(v => v.id === item.ventName) || {};
-        return {
-          ...item,
-          ventName: vent.ventName || `Unknown (ID: ${item.ventName})`
-        };
-      });
-
-    return {
-      ...order,
-      userName: client.name || `Unknown (ID: ${order.user})`,
-      userEmail: client.email,
-      userPhone: client.phone,
-      items: orderItems
-    };
-  });
-}
-
-async function fetchAndProcessData() {
-  try {
-    loading.value = true;
-    const [ordersData, listsData, clientsData, ventsData] = await Promise.all([
-      fetchOrders(),
-      fetchLists(),
-      fetchClients(),
-      fetchVents()
-    ]);
+    const user = await authService.login(username.value, password.value)
     
-    groupedOrders.value = enrichOrderData(ordersData, listsData, clientsData, ventsData);
-    console.log('Processed orders:', groupedOrders.value);
-  } catch (error) {
-    console.error('Error processing data:', error);
+    if (user.token) {
+      router.push('/vent')
+    } else {
+      error.value = 'Ошибка авторизации'
+    }
+  } catch (err) {
+    error.value = 'Неверные учетные данные'
+    console.error('Login error:', err)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
-
-async function onLoadClick() {
-  await fetchAndProcessData();
-}
-
-onBeforeMount(async () => {
-  await fetchAndProcessData();
-});
 </script>
 
 <template>
-  <div>
-    <button @click="onLoadClick" :disabled="loading">
-      {{ loading ? 'Loading...' : 'Load Data' }}
-    </button>
-
-    <div v-if="groupedOrders.length">
-      <div v-for="order in groupedOrders" :key="order.id" class="order">
-        <h3>Номер заказа #{{ order.orderNumber }}</h3>
-        <p>ФИО: {{ order.userName }}</p>
-        <p>Почта: {{ order.userEmail }}</p>
-        <p>Телефон: {{ order.userPhone }}</p>
-        <p>Дата: {{ order.date }}</p>
-        <p>Комментарий: {{ order.comment }}</p>
-        
-        <h4>Items:</h4>
-        <ul>
-          <li v-for="item in order.items" :key="item.id">
-            Заготовка: {{ item.ventName }}, 
-            Характеристики: {{ item.param }}, 
-            Количество: {{ item.quantity }}
-          </li>
-        </ul>
+  <div class="login-page">
+    <h1>Вход в систему</h1>
+    
+    <form @submit.prevent="handleLogin" class="login-form">
+      <div class="form-group">
+        <label>Имя пользователя:</label>
+        <input v-model="username" type="text" required>
       </div>
-    </div>
-
-    <div v-else-if="!loading">
-      No orders found
-    </div>
+      
+      <div class="form-group">
+        <label>Пароль:</label>
+        <input v-model="password" type="password" required>
+      </div>
+      
+      <button type="submit" :disabled="loading">
+        {{ loading ? 'Вход...' : 'Войти' }}
+      </button>
+      
+      <div v-if="error" class="error">{{ error }}</div>
+    </form>
   </div>
 </template>
 
 <style scoped>
-.order {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  border: 1px solid #ccc;
+.login-page {
+  max-width: 400px;
+  margin: 100px auto;
+  padding: 30px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.login-form {
+  margin-top: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e0;
   border-radius: 4px;
-  background-color: #f9f9f9;
+  font-size: 16px;
 }
 
 button {
-  padding: 0.5rem 1rem;
-  background-color: #42b983;
+  width: 100%;
+  padding: 12px;
+  background-color: #3182ce;
   color: white;
   border: none;
   border-radius: 4px;
+  font-size: 16px;
   cursor: pointer;
-  margin-bottom: 1rem;
 }
 
 button:disabled {
-  background-color: #cccccc;
+  background-color: #a0aec0;
   cursor: not-allowed;
 }
 
-ul {
-  list-style-type: none;
-  padding-left: 0;
-}
-
-li {
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  background-color: #fff;
-  border: 1px solid #eee;
+.error {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #fff5f5;
+  border: 1px solid #fc8181;
   border-radius: 4px;
+  color: #e53e3e;
 }
 </style>

@@ -2,10 +2,16 @@ from django.db import models
 
 # Create your models here.
 class Client(models.Model):
-    user = models.ForeignKey("auth.User", verbose_name="Пользователь", on_delete=models.CASCADE, null=True)
+    user = models.OneToOneField(
+        "auth.User", 
+        verbose_name="Пользователь", 
+        on_delete=models.CASCADE,
+        related_name='client'
+    )
     name = models.TextField("ФИО")
     email = models.TextField("Электронная почта")
     phone = models.TextField("Телефон")
+    
     class Meta:
         verbose_name = "Клиент"
         verbose_name_plural = "Клиенты"

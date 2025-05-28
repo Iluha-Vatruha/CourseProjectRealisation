@@ -1,135 +1,154 @@
 <script setup>
-import { ref, onBeforeMount } from 'vue';
-import axios from "axios";
+import { ref, onMounted } from 'vue'
+import { useCartStore } from '@/stores/cart'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
 
-const vents = ref([]);
-const loading = ref(false);
-const error = ref(null);
+const router = useRouter()
+const cartStore = useCartStore()
+const vents = ref([])
+const loading = ref(false)
+const error = ref(null)
 
-async function fetchVents() {
+const fetchVents = async () => {
   try {
-    loading.value = true;
-    error.value = null;
-    const response = await axios.get("/api/vents/");
-    vents.value = response.data;
+    loading.value = true
+    const response = await axios.get('/api/vents/')
+    vents.value = response.data
   } catch (err) {
-    error.value = err.message || "Failed to fetch vents";
-    console.error("Error fetching vents:", err);
+    error.value = 'Ошибка загрузки заготовок: ' + (err.response?.data?.message || err.message)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
-function onLoadClick() {
-  fetchVents();
+const addToCart = (vent) => {
+  cartStore.addItem(vent)
+  router.push('/cart')
 }
 
-onBeforeMount(() => {
-  fetchVents();
-});
+onMounted(() => {
+  fetchVents()
+})
 </script>
 
 <template>
-  <div class="vents-container">
-    <h1>Vents List</h1>
+  <div class="vents-page">
+    <h1>Каталог заготовок</h1>
     
-    <button @click="onLoadClick" :disabled="loading">
-      {{ loading ? 'Loading...' : 'Refresh List' }}
-    </button>
-
-    <div v-if="error" class="error-message">
-      Error: {{ error }}
+    <div class="cart-indicator" @click="router.push('/cart')">
+      Корзина ({{ cartStore.items.length }})
     </div>
-
-    <div v-if="loading && !vents.length" class="loading-message">
-      Loading vents...
-    </div>
-
-    <div v-else-if="vents.length" class="vents-list">
-      <div v-for="vent in vents" :key="vent.id" class="vent-item">
-        <h3>{{ vent.ventName }}</h3>
-        <div v-if="vent.picture" class="vent-image">
-          <img :src="vent.picture" :alt="vent.ventName" />
+    
+    <div v-if="loading" class="loading">Загрузка...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
+    
+    <div v-else class="vents-grid">
+      <div v-for="vent in vents" :key="vent.id" class="vent-card">
+        <div class="vent-image-container">
+          <img v-if="vent.picture" :src="vent.picture" :alt="vent.ventName" class="vent-image" />
+          <div v-else class="image-placeholder">Изображение отсутствует</div>
+        </div>
+        <div class="vent-info">
+          <h3>{{ vent.ventName }}</h3>
+          <button @click="addToCart(vent)" class="add-btn">
+            Добавить в корзину
+          </button>
         </div>
       </div>
-    </div>
-
-    <div v-else class="no-vents">
-      No vents found
     </div>
   </div>
 </template>
 
 <style scoped>
-.vents-container {
-  max-width: 800px;
+.vents-page {
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  position: relative;
 }
 
-h1 {
-  color: #2c3e50;
-  margin-bottom: 20px;
-}
-
-button {
+.cart-indicator {
+  position: absolute;
+  top: 20px;
+  right: 20px;
   padding: 10px 15px;
   background-color: #42b983;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.vents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+  margin-top: 40px;
+}
+
+.vent-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.vent-card:hover {
+  transform: translateY(-5px);
+}
+
+.vent-image-container {
+  height: 200px;
+  background-color: #f9f9f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vent-image {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.image-placeholder {
+  color: #888;
+  font-style: italic;
+}
+
+.vent-info {
+  padding: 15px;
+  text-align: center;
+}
+
+.vent-info h3 {
+  margin: 10px 0;
+  color: #333;
+}
+
+.add-btn {
+  padding: 8px 16px;
+  background-color: #35495e;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-bottom: 20px;
+  transition: background-color 0.2s;
 }
 
-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
+.add-btn:hover {
+  background-color: #42b983;
 }
 
-.error-message {
-  color: #ff4444;
-  padding: 10px;
-  background-color: #ffeeee;
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-
-.loading-message {
-  color: #666;
-  padding: 20px;
+.loading, .error {
   text-align: center;
+  padding: 40px;
+  font-size: 18px;
 }
 
-.vents-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.vent-item {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 15px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.vent-item h3 {
-  margin-top: 0;
-  color: #2c3e50;
-}
-
-.vent-image img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 4px;
-  margin-top: 10px;
-}
-
-.no-vents {
-  padding: 20px;
-  text-align: center;
-  color: #666;
+.error {
+  color: #e53935;
 }
 </style>

@@ -23,6 +23,9 @@ from Irktech.api import OrdersViewset, ListsViewset, VentsViewset, ClientsViewse
 
 from Irktech import views
 
+from Irktech.api import CustomAuthToken
+
+
 router = DefaultRouter()
 router.register("orders", OrdersViewset, basename="orders")
 router.register("lists", ListsViewset, basename="lists")
@@ -32,7 +35,7 @@ router.register("clients", ClientsViewset, basename="clients")
 
 
 urlpatterns = [
-
+    path('api/auth/login/', CustomAuthToken.as_view(), name='api_auth_login'),
     path('', views.ShowOrdersView.as_view()),
     path('admin/', admin.site.urls),
     path('api/', include (router.urls)),
